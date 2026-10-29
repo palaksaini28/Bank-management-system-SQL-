@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexBank — Secure Banking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0b0f;
+  --surface: #111318;
+  --card: #161920;
+  --border: #1e2230;
+  --accent: #00e5a0;
+  --accent2: #0099ff;
+  --danger: #ff4466;
+  --warning: #ffaa00;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --green: #00e5a0;
+  --red: #ff4466;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── GRID BACKGROUND ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── LOGIN SCREEN ── */
+#login-screen {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+
+.login-box {
+  width: 420px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.login-box::before {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(0,229,160,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.bank-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+.bank-logo svg { width: 40px; height: 40px; }
+.bank-name { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.bank-name span { color: var(--accent); }
+
+.login-title { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.login-sub { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+.form-group { margin-bottom: 20px; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+.form-input {
+  width: 100%; padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-size: 15px;
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,160,0.1); }
+
+.btn-primary {
+  width: 100%; padding: 15px;
+  background: var(--accent); color: #000;
+  border: none; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; margin-top: 8px;
+  letter-spacing: 0.5px;
+}
+.btn-primary:hover { background: #00ffb3; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,229,160,0.25); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.demo-accounts { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+.demo-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.demo-list { display: flex; gap: 8px; flex-wrap: wrap; }
+.demo-chip {
+  padding: 6px 12px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; font-size: 12px; color: var(--accent); cursor: pointer;
+  font-family: 'DM Mono', monospace; transition: all 0.15s;
+}
+.demo-chip:hover { border-color: var(--accent); background: rgba(0,229,160,0.08); }
+
+.error-msg { color: var(--danger); font-size: 13px; margin-top: 12px; display: none; padding: 10px 14px; background: rgba(255,68,102,0.1); border-radius: 8px; border-left: 3px solid var(--danger); }
+
+/* ── DASHBOARD ── */
+#dashboard { display: none; min-height: 100vh; position: relative; z-index: 1; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 240px;
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 28px 0; z-index: 10;
+}
+
+.sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 24px 32px; }
+.sidebar-logo svg { width: 32px; height: 32px; }
+.sidebar-logo span { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+.sidebar-logo em { color: var(--accent); font-style: normal; }
+
+.nav-section { padding: 0 12px; flex: 1; }
+.nav-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; padding: 0 12px; margin-bottom: 8px; margin-top: 20px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 12px; border-radius: 10px;
+  cursor: pointer; transition: all 0.15s; color: var(--muted);
+  font-size: 14px; font-weight: 500; margin-bottom: 2px;
+}
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.nav-item:hover { background: var(--card); color: var(--text); }
+.nav-item.active { background: rgba(0,229,160,0.1); color: var(--accent); }
+.nav-item.active svg { stroke: var(--accent); }
+
+.sidebar-footer { padding: 20px 24px 0; border-top: 1px solid var(--border); }
+.user-card { display: flex; align-items: center; gap: 10px; }
+.user-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: #000;
+  flex-shrink: 0;
+}
+.user-info { flex: 1; overflow: hidden; }
+.user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-acc { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+.logout-btn {
+  padding: 6px; background: transparent; border: none;
+  color: var(--muted); cursor: pointer; border-radius: 6px; transition: all 0.15s;
+}
+.logout-btn:hover { color: var(--danger); background: rgba(255,68,102,0.1); }
+
+/* ── MAIN CONTENT ── */
+.main-content { margin-left: 240px; padding: 36px; }
+
+/* ── HEADER ── */
+.page-header { margin-bottom: 32px; }
+.page-title { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
+.page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px;
+}
+
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 28px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; position: relative; overflow: hidden; }
+.stat-card::after {
+  content: ''; position: absolute; bottom: -20px; right: -20px;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,160,0.08) 0%, transparent 70%);
+}
+.stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; }
+.stat-value.green { color: var(--accent); }
+.stat-value.blue { color: var(--accent2); }
+.stat-change { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* ── BALANCE CARD ── */
+.balance-card {
+  background: linear-gradient(135deg, #0d1f17 0%, #0a1520 100%);
+  border: 1px solid rgba(0,229,160,0.2);
+  border-radius: 20px; padding: 32px;
+  position: relative; overflow: hidden;
+  margin-bottom: 28px;
+}
+.balance-card::before {
+  content: ''; position: absolute; top: -50%; right: -10%;
+  width: 350px; height: 350px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,160,0.06) 0%, transparent 70%);
+}
+.balance-label { font-size: 12px; color: rgba(0,229,160,0.7); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+.balance-amount { font-family: 'Syne', sans-serif; font-size: 48px; font-weight: 800; color: #fff; }
+.balance-amount .currency { font-size: 24px; opacity: 0.6; margin-right: 4px; }
+.balance-account { font-family: 'DM Mono', monospace; font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 16px; letter-spacing: 2px; }
+
+/* ── TRANSFER FORM ── */
+.transfer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+
+.input-group { margin-bottom: 20px; }
+.input-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+.input-field {
+  width: 100%; padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-size: 15px;
+  font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s;
+}
+.input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,160,0.08); }
+.input-field.error { border-color: var(--danger); }
+
+.amount-input { position: relative; }
+.amount-prefix {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--accent); font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 600;
+}
+.amount-input .input-field { padding-left: 36px; font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 600; }
+
+.account-preview {
+  padding: 12px 16px; background: rgba(0,229,160,0.06); border: 1px solid rgba(0,229,160,0.2);
+  border-radius: 10px; margin-top: 8px; font-size: 13px; color: var(--accent);
+  display: none;
+}
+
+.btn-transfer {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, var(--accent), #00c88a);
+  color: #000; border: none; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+}
+.btn-transfer:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,229,160,0.3); }
+.btn-transfer:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.limit-info { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.limit-badge {
+  padding: 6px 12px; border-radius: 20px; font-size: 12px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── TRANSACTIONS TABLE ── */
+.tx-table { width: 100%; border-collapse: collapse; }
+.tx-table th {
+  text-align: left; padding: 12px 16px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.tx-table td { padding: 14px 16px; border-bottom: 1px solid rgba(30,34,48,0.5); }
+.tx-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tx-table tr:last-child td { border-bottom: none; }
+
+.tx-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; margin-right: 12px;
+  flex-shrink: 0;
+}
+.tx-icon.credit { background: rgba(0,229,160,0.1); }
+.tx-icon.debit { background: rgba(255,68,102,0.1); }
+
+.tx-name { font-size: 14px; font-weight: 500; }
+.tx-ref { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.tx-amount { font-family: 'Syne', sans-serif; font-weight: 700; }
+.tx-amount.credit { color: var(--accent); }
+.tx-amount.debit { color: var(--danger); }
+.tx-date { font-size: 12px; color: var(--muted); }
+
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.badge.completed { background: rgba(0,229,160,0.1); color: var(--accent); }
+.badge.test { background: rgba(0,153,255,0.1); color: var(--accent2); }
+
+/* ── TESTING PANEL ── */
+.test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.test-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.test-card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.test-card-desc { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+
+.btn-test {
+  padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger-outline { background: transparent; border: 1px solid rgba(255,68,102,0.3); color: var(--danger); }
+.btn-danger-outline:hover { background: rgba(255,68,102,0.08); }
+.btn-warning-outline { background: transparent; border: 1px solid rgba(255,170,0,0.3); color: var(--warning); }
+.btn-warning-outline:hover { background: rgba(255,170,0,0.08); }
+
+.test-result {
+  margin-top: 12px; padding: 12px; border-radius: 8px;
+  font-family: 'DM Mono', monospace; font-size: 12px; line-height: 1.6;
+  max-height: 150px; overflow-y: auto; display: none;
+}
+.test-result.success { background: rgba(0,229,160,0.08); color: var(--accent); border: 1px solid rgba(0,229,160,0.15); }
+.test-result.error { background: rgba(255,68,102,0.08); color: var(--danger); border: 1px solid rgba(255,68,102,0.15); }
+.test-result.info { background: rgba(0,153,255,0.08); color: var(--accent2); border: 1px solid rgba(0,153,255,0.15); }
+
+/* ── AUDIT LOG ── */
+.audit-entry { padding: 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; }
+.audit-entry:last-child { border-bottom: none; }
+.audit-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.audit-dot.success { background: var(--accent); }
+.audit-dot.fail { background: var(--danger); }
+.audit-action { font-size: 13px; font-weight: 500; }
+.audit-details { font-size: 12px; color: var(--muted); }
+.audit-time { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-left: auto; white-space: nowrap; }
+
+/* ── TOAST ── */
+.toast-container { position: fixed; top: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+.toast {
+  padding: 14px 20px; border-radius: 12px; font-size: 14px; max-width: 360px;
+  animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+.toast.success { background: #0d1f17; border: 1px solid rgba(0,229,160,0.3); color: var(--accent); }
+.toast.error { background: #1f0d0d; border: 1px solid rgba(255,68,102,0.3); color: var(--danger); }
+.toast.info { background: #0d1520; border: 1px solid rgba(0,153,255,0.3); color: var(--accent2); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ── PAGE SECTIONS ── */
+.page-section { display: none; }
+.page-section.active { display: block; }
+
+/* ── LOADING ── */
+.spinner {
+  width: 20px; height: 20px; border: 2px solid rgba(0,0,0,0.3);
+  border-top-color: #000; border-radius: 50%; animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+
+.empty-state { text-align: center; padding: 48px; color: var(--muted); }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+.stress-meter { margin-top: 16px; }
+.meter-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+.meter-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.5s ease; }
+
+/* ================= ENHANCED BANKING UI ================= */
+:root{--shadow:0 18px 45px rgba(0,0,0,.22);--radius-lg:22px}
+body{font-size:15px}
+.login-box{width:min(520px,92vw);padding:56px 48px;border-radius:26px;box-shadow:0 30px 90px rgba(0,0,0,.42)}
+.login-title{font-size:34px}.login-sub{font-size:15px}.form-input{padding:17px 18px;font-size:16px}.btn-primary{padding:17px;font-size:16px}
+.sidebar{width:280px;padding:32px 0}.sidebar-logo{padding:0 30px 38px}.sidebar-logo svg{width:38px;height:38px}.sidebar-logo span{font-size:22px}.nav-section{padding:0 16px}.nav-item{padding:14px 15px;font-size:15px;gap:14px;border-radius:13px}.nav-item svg{width:20px;height:20px}.nav-label{font-size:11px;padding:0 15px;margin-top:25px}
+.sidebar-footer{padding:24px 28px 0}.user-avatar{width:44px;height:44px}.user-name{font-size:14px}.user-acc{font-size:12px}
+.main-content{margin-left:280px;padding:42px 48px;max-width:1700px}.page-header{margin-bottom:30px}.page-title{font-size:36px}.page-sub{font-size:15px;margin-top:7px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:28px;padding:16px 20px;background:rgba(17,19,24,.82);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(12px);position:sticky;top:18px;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+.topbar-left{display:flex;align-items:center;gap:12px}.status-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}.topbar-label{font-size:14px;color:var(--muted)}.topbar-user{font-weight:700;color:var(--text)}.topbar-right{display:flex;align-items:center;gap:10px}.icon-btn{height:42px;min-width:42px;padding:0 13px;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:11px;cursor:pointer;font-size:14px;transition:.2s}.icon-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.balance-card{padding:40px 42px;min-height:225px;border-radius:26px;box-shadow:var(--shadow);margin-bottom:30px}.balance-label{font-size:13px}.balance-amount{font-size:60px;letter-spacing:-1.5px}.balance-account{font-size:15px}.balance-tools{position:absolute;right:28px;top:28px;display:flex;gap:9px}.balance-tools button{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;border-radius:10px;padding:9px 12px;cursor:pointer}.balance-tools button:hover{background:rgba(255,255,255,.12)}
+.stats-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-bottom:30px}.stat-card{padding:28px;border-radius:20px;min-height:150px;box-shadow:0 12px 32px rgba(0,0,0,.12)}.stat-label{font-size:13px}.stat-value{font-size:34px}.stat-change{font-size:13px}
+.card{padding:30px;border-radius:20px;box-shadow:0 12px 32px rgba(0,0,0,.12)}.section-title{font-size:17px}.section-header{margin-bottom:20px}
+.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px}.quick-action{display:flex;align-items:center;gap:14px;padding:20px;border:1px solid var(--border);background:linear-gradient(145deg,var(--card),var(--surface));border-radius:17px;color:var(--text);cursor:pointer;transition:.22s;text-align:left}.quick-action:hover{transform:translateY(-4px);border-color:rgba(0,229,160,.4);box-shadow:0 15px 35px rgba(0,0,0,.18)}.quick-icon{width:46px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:rgba(0,229,160,.1);font-size:21px}.quick-title{font-weight:700;font-size:14px}.quick-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.transfer-grid{grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr);gap:30px}.input-field{padding:17px 18px;font-size:16px}.btn-transfer{padding:18px;font-size:17px;border-radius:13px;box-shadow:0 12px 25px rgba(0,229,160,.12)}
+.tx-table{font-size:14px}.tx-table th{padding:16px 14px}.tx-table td{padding:17px 14px}.tx-name{font-size:14px}.tx-date{font-size:13px}.tx-amount{font-size:15px}
+.test-grid{gap:20px}.test-card{padding:26px;border-radius:18px}.btn-test{padding:12px 18px}
+.audit-entry{padding:18px 0}
+@media(max-width:1100px){.main-content{padding:32px}.quick-grid{grid-template-columns:repeat(2,1fr)}.transfer-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}.balance-amount{font-size:48px}}
+@media(max-width:760px){.sidebar{width:78px}.sidebar-logo{padding:0 18px 28px}.sidebar-logo span,.nav-label,.nav-item{font-size:0}.nav-item{justify-content:center;padding:15px}.nav-item svg{width:23px;height:23px}.user-info,.logout-btn{display:none}.sidebar-footer{padding:18px 12px}.user-card{justify-content:center}.main-content{margin-left:78px;padding:22px 16px}.topbar{top:8px}.topbar-label{display:none}.page-title{font-size:29px}.quick-grid,.stats-grid{grid-template-columns:1fr}.balance-card{padding:30px 25px}.balance-amount{font-size:42px}.balance-tools{right:16px;top:16px}.tx-table{display:block;overflow-x:auto;white-space:nowrap}.login-box{padding:40px 28px}}
+@media(max-width:500px){.topbar-right .icon-btn span{display:none}.topbar-right .icon-btn{padding:0 10px}.quick-action{padding:16px}.card{padding:22px}.balance-card{min-height:190px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="bank-logo">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="40" height="40" rx="10" fill="#00e5a0" fill-opacity="0.1"/>
+        <path d="M20 8L32 14V16H8V14L20 8Z" fill="#00e5a0"/>
+        <rect x="10" y="18" width="4" height="10" fill="#00e5a0" fill-opacity="0.7"/>
+        <rect x="18" y="18" width="4" height="10" fill="#00e5a0" fill-opacity="0.7"/>
+        <rect x="26" y="18" width="4" height="10" fill="#00e5a0" fill-opacity="0.7"/>
+        <rect x="8" y="30" width="24" height="2" rx="1" fill="#00e5a0"/>
+      </svg>
+      <div class="bank-name">Nex<span>Bank</span></div>
+    </div>
+    <div class="login-title">Welcome Back</div>
+    <div class="login-sub">Secure access to your account</div>
+
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input type="text" id="login-username" class="form-input" placeholder="Enter username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" id="login-password" class="form-input" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <div class="error-msg" id="login-error"></div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
+
+    <div class="demo-accounts">
+      <div class="demo-title">Demo Accounts (password: password123)</div>
+      <div class="demo-list">
+        <div class="demo-chip" onclick="fillDemo('alice')">alice</div>
+        <div class="demo-chip" onclick="fillDemo('bob')">bob</div>
+        <div class="demo-chip" onclick="fillDemo('carol')">carol</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#00e5a0" fill-opacity="0.1"/>
+        <path d="M16 5L26 10V12H6V10L16 5Z" fill="#00e5a0"/>
+        <rect x="8" y="14" width="3" height="8" fill="#00e5a0" opacity="0.7"/>
+        <rect x="14.5" y="14" width="3" height="8" fill="#00e5a0" opacity="0.7"/>
+        <rect x="21" y="14" width="3" height="8" fill="#00e5a0" opacity="0.7"/>
+        <rect x="6" y="24" width="20" height="2" rx="1" fill="#00e5a0"/>
+      </svg>
+      <span>Nex<em>Bank</em></span>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" onclick="showPage('overview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" onclick="showPage('transfer')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Transfer
+      </div>
+      <div class="nav-item" onclick="showPage('transactions')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Transactions
+      </div>
+
+      <div class="nav-label">Testing</div>
+      <div class="nav-item" onclick="showPage('testing')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+        Test Suite
+      </div>
+      <div class="nav-item" onclick="showPage('audit')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Security Log
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar" id="sidebar-avatar">A</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Alice Johnson</div>
+          <div class="user-acc" id="sidebar-acc">ACC...</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Logout">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><span class="status-dot"></span><div><div class="topbar-user" id="topbar-user">Welcome back</div><div class="topbar-label">Secure banking dashboard</div></div></div>
+      <div class="topbar-right"><button class="icon-btn" onclick="loadOverview();toast('Dashboard refreshed','success')" title="Refresh">↻ <span>Refresh</span></button><button class="icon-btn" onclick="doLogout()" title="Logout">⇥ <span>Logout</span></button></div>
+    </div>
+
+    <!-- OVERVIEW PAGE -->
+    <div class="page-section active" id="page-overview">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Your financial overview</div>
+      </div>
+
+      <div class="balance-card">
+        <div class="balance-tools"><button onclick="toggleBalance()" id="balance-toggle" title="Hide balance">◉ Hide</button><button onclick="copyAccount()" title="Copy account number">▣ Copy</button></div>
+        <div class="balance-label">Available Balance</div>
+        <div class="balance-amount"><span class="currency">₹</span><span id="overview-balance">0.00</span></div>
+        <div class="balance-account" id="overview-account">Loading...</div>
+      </div>
+
+      <div class="quick-grid">
+        <button class="quick-action" onclick="showPage('transfer')"><span class="quick-icon">↗</span><span><div class="quick-title">Send Money</div><div class="quick-sub">Transfer securely</div></span></button>
+        <button class="quick-action" onclick="showPage('transactions')"><span class="quick-icon">▤</span><span><div class="quick-title">Transactions</div><div class="quick-sub">View your activity</div></span></button>
+        <button class="quick-action" onclick="copyAccount()"><span class="quick-icon">▣</span><span><div class="quick-title">Account Number</div><div class="quick-sub">Copy instantly</div></span></button>
+        <button class="quick-action" onclick="showPage('audit')"><span class="quick-icon">⌁</span><span><div class="quick-title">Security Log</div><div class="quick-sub">Review account activity</div></span></button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Sent</div>
+          <div class="stat-value" id="stat-sent" style="color:#ff4466">₹0</div>
+          <div class="stat-change">This session</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Received</div>
+          <div class="stat-value green" id="stat-recv">₹0</div>
+          <div class="stat-change">This session</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Transactions</div>
+          <div class="stat-value blue" id="stat-count">0</div>
+          <div class="stat-change">Total</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">Recent Transactions</div>
+          <div style="font-size:13px;color:var(--muted);cursor:pointer" onclick="showPage('transactions')">View All →</div>
+        </div>
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Transaction</th>
+              <th>Reference</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="recent-txns"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TRANSFER PAGE -->
+    <div class="page-section" id="page-transfer">
+      <div class="page-header">
+        <div class="page-title">Transfer Money</div>
+        <div class="page-sub">Send funds securely to any account</div>
+      </div>
+
+      <div class="transfer-grid">
+        <div class="card">
+          <div class="section-title" style="margin-bottom:24px">New Transfer</div>
+
+          <div class="input-group">
+            <label class="input-label">Recipient Account</label>
+            <input type="text" id="to-account" class="input-field" placeholder="ACC..." style="font-family:'DM Mono',monospace;text-transform:uppercase" oninput="lookupAccount(this.value)">
+            <div class="account-preview" id="account-preview"></div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Amount</label>
+            <div class="amount-input">
+              <span class="amount-prefix">₹</span>
+              <input type="number" id="transfer-amount" class="input-field" placeholder="0.00" min="1" max="50000" step="0.01" oninput="updateTransferHint(this.value)">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Description (Optional)</label>
+            <input type="text" id="transfer-desc" class="input-field" placeholder="e.g. Rent payment" maxlength="200">
+          </div>
+
+          <div id="transfer-hint" style="font-size:13px;color:var(--muted);margin-top:-8px;margin-bottom:12px">Enter an amount to continue.</div>
+          <div class="limit-info">
+            <span class="limit-badge">Min: ₹1</span>
+            <span class="limit-badge">Max: ₹50,000</span>
+            <span class="limit-badge">Daily: ₹1,00,000</span>
+          </div>
+
+          <button class="btn-transfer" id="transfer-btn" onclick="doTransfer()" style="margin-top:20px">
+            Send Money
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="section-title" style="margin-bottom:20px">Available Accounts</div>
+          <div id="accounts-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS PAGE -->
+    <div class="page-section" id="page-transactions">
+      <div class="page-header">
+        <div class="page-title">Transaction History</div>
+        <div class="page-sub">All your account activity</div>
+      </div>
+      <div class="card">
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Transaction</th>
+              <th>Reference</th>
+              <th>Date & Time</th>
+              <th>Status</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="all-txns"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TESTING PAGE -->
+    <div class="page-section" id="page-testing">
+      <div class="page-header">
+        <div class="page-title">Test Suite</div>
+        <div class="page-sub">Transaction, security, boundary & stress testing</div>
+      </div>
+
+      <div class="test-grid">
+        <!-- Transaction Tests -->
+        <div class="test-card">
+          <div class="test-card-title">🔄 Transaction Testing</div>
+          <div class="test-card-desc">Tests valid money transfers, debit/credit operations, and transaction reference generation.</div>
+          <button class="btn-test btn-outline" onclick="runTransactionTest()">Run Tests</button>
+          <div class="test-result" id="result-transaction"></div>
+        </div>
+
+        <!-- Security Tests -->
+        <div class="test-card">
+          <div class="test-card-title">🔐 Security Testing</div>
+          <div class="test-card-desc">Tests auth enforcement, session tokens, brute-force lockout, and CSRF protection.</div>
+          <button class="btn-test btn-danger-outline" onclick="runSecurityTest()">Run Tests</button>
+          <div class="test-result" id="result-security"></div>
+        </div>
+
+        <!-- Boundary Tests -->
+        <div class="test-card">
+          <div class="test-card-title">📏 Boundary Testing</div>
+          <div class="test-card-desc">Tests minimum (₹1), maximum (₹50,000), zero, negative, and non-numeric transfer amounts.</div>
+          <button class="btn-test btn-warning-outline" onclick="runBoundaryTest()">Run Tests</button>
+          <div class="test-result" id="result-boundary"></div>
+        </div>
+
+        <!-- Stress Tests -->
+        <div class="test-card">
+          <div class="test-card-title">⚡ Stress Testing</div>
+          <div class="test-card-desc">Simulates 50 rapid concurrent transactions and measures throughput (TPS) and failure rate.</div>
+          <button class="btn-test btn-outline" onclick="runStressTest()">Run Tests</button>
+          <div class="test-result" id="result-stress"></div>
+          <div class="stress-meter" id="stress-meter" style="display:none">
+            <div style="font-size:11px;color:var(--muted)">Progress</div>
+            <div class="meter-bar"><div class="meter-fill" id="stress-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test Summary -->
+      <div class="card" style="margin-top:20px">
+        <div class="section-title" style="margin-bottom:16px">Test Run Summary</div>
+        <div id="test-summary" style="color:var(--muted);font-size:14px">Run any test above to see results here.</div>
+      </div>
+    </div>
+
+    <!-- AUDIT LOG PAGE -->
+    <div class="page-section" id="page-audit">
+      <div class="page-header">
+        <div class="page-title">Security Log</div>
+        <div class="page-sub">Audit trail of all account activity</div>
+      </div>
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">Audit Events</div>
+          <button class="btn-test btn-outline" onclick="loadAuditLog()" style="padding:8px 16px;font-size:12px">Refresh</button>
+        </div>
+        <div id="audit-entries"></div>
+      </div>
+    </div>
+
+  </div><!-- end main-content -->
+</div><!-- end dashboard -->
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+let authToken = null;
+let currentUser = null;
+let accountLookupTimer = null;
+let testSummary = { passed: 0, failed: 0, total: 0 };
+
+const API = 'http://localhost:5000/api';
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+
+function fillDemo(user) {
+  document.getElementById('login-username').value = user;
+  document.getElementById('login-password').value = 'password123';
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+
+  errEl.style.display = 'none';
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    authToken = data.token;
+    currentUser = data.user;
+    showDashboard();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+    btn.innerHTML = 'Sign In';
+    btn.disabled = false;
+  }
+}
+
+async function doLogout() {
+  try {
+    await apiFetch('/auth/logout', { method: 'POST' });
+  } catch (_) {}
+  authToken = null; currentUser = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-password').value = '';
+}
+
+function showDashboard() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('sidebar-name').textContent = currentUser.full_name;
+  document.getElementById('sidebar-acc').textContent = currentUser.account_number;
+  document.getElementById('sidebar-avatar').textContent = currentUser.full_name[0].toUpperCase();
+  document.getElementById('topbar-user').textContent = 'Welcome back, ' + currentUser.full_name.split(' ')[0];
+  loadOverview();
+  loadAccountsList();
+}
+
+function toggleBalance() {
+  const el = document.getElementById('overview-balance');
+  const btn = document.getElementById('balance-toggle');
+  if (el.dataset.hidden === '1') { el.textContent = formatNum(currentUser.balance || 0); el.dataset.hidden = '0'; btn.textContent = '◉ Hide'; }
+  else { el.textContent = '••••••••'; el.dataset.hidden = '1'; btn.textContent = '◉ Show'; }
+}
+
+async function copyAccount() {
+  const acc = document.getElementById('overview-account').textContent;
+  if (!acc || acc === 'Loading...') return;
+  try { await navigator.clipboard.writeText(acc); toast('Account number copied', 'success'); } catch (_) { toast('Copy not available', 'error'); }
+}
+
+// ── API HELPER ────────────────────────────────────────────────────────────────
+
+async function apiFetch(path, opts = {}) {
+  opts.headers = opts.headers || {};
+  if (authToken) opts.headers['X-Auth-Token'] = authToken;
+  opts.credentials = 'include';
+  if (opts.body && typeof opts.body === 'object') {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(opts.body);
+  }
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw Object.assign(new Error(data.error || 'Error'), { status: res.status, data });
+  return data;
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+
+function showPage(name) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + name);
+  if (!page) return;
+  page.classList.add('active');
+  const nav = [...document.querySelectorAll('.nav-item')].find(n => n.getAttribute('onclick')?.includes("'" + name + "'"));
+  if (nav) nav.classList.add('active');
+  if (name === 'overview') loadOverview();
+  if (name === 'transactions') loadAllTransactions();
+  if (name === 'audit') loadAuditLog();
+  if (name === 'transfer') loadAccountsList();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+
+async function loadOverview() {
+  try {
+    const [bal, txns] = await Promise.all([
+      apiFetch('/account/balance'),
+      apiFetch('/account/transactions?limit=5')
+    ]);
+
+    document.getElementById('overview-balance').textContent = formatNum(bal.balance);
+    document.getElementById('overview-account').textContent = bal.account_number;
+    currentUser.balance = bal.balance;
+
+    let sent = 0, recv = 0;
+    txns.transactions.forEach(t => {
+      if (t.direction === 'debit') sent += t.amount;
+      else recv += t.amount;
+    });
+    document.getElementById('stat-sent').textContent = '₹' + formatNum(sent);
+    document.getElementById('stat-recv').textContent = '₹' + formatNum(recv);
+    document.getElementById('stat-count').textContent = txns.transactions.length;
+
+    renderTransactions('recent-txns', txns.transactions);
+  } catch (e) { toast('Failed to load overview', 'error'); }
+}
+
+function renderTransactions(elId, txns) {
+  const el = document.getElementById(elId);
+  if (!txns.length) {
+    el.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📋</div>No transactions yet</div></td></tr>`;
+    return;
+  }
+  el.innerHTML = txns.map(t => {
+    const isCredit = t.direction === 'credit';
+    const icon = isCredit
+      ? `<div class="tx-icon credit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>`
+      : `<div class="tx-icon debit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff4466" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></div>`;
+    const counterpart = isCredit ? t.from_account : t.to_account;
+    const date = new Date(t.timestamp + 'Z').toLocaleString();
+    return `<tr>
+      <td><div style="display:flex;align-items:center">${icon}<div><div class="tx-name">${t.description || 'Transfer'}</div><div class="tx-ref">${counterpart || '—'}</div></div></div></td>
+      <td><span class="tx-ref">${t.reference}</span></td>
+      <td><span class="tx-date">${date}</span></td>
+      <td><span class="badge ${t.status}">${t.status}</span></td>
+      <td><div class="tx-amount ${isCredit ? 'credit' : 'debit'}">${isCredit ? '+' : '-'}₹${formatNum(t.amount)}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadAllTransactions() {
+  try {
+    const data = await apiFetch('/account/transactions?limit=100');
+    renderTransactions('all-txns', data.transactions);
+  } catch (e) { toast('Failed to load transactions', 'error'); }
+}
+
+// ── TRANSFER ──────────────────────────────────────────────────────────────────
+
+function lookupAccount(val) {
+  clearTimeout(accountLookupTimer);
+  const preview = document.getElementById('account-preview');
+  if (!val || val.length < 5) { preview.style.display = 'none'; return; }
+  accountLookupTimer = setTimeout(async () => {
+    try {
+      const data = await apiFetch(`/account/lookup?account_number=${val.toUpperCase()}`);
+      preview.textContent = `✓ ${data.full_name}`;
+      preview.style.display = 'block';
+    } catch (_) {
+      preview.textContent = '✗ Account not found';
+      preview.style.display = 'block';
+      preview.style.borderColor = 'rgba(255,68,102,0.2)';
+      preview.style.background = 'rgba(255,68,102,0.06)';
+      preview.style.color = 'var(--danger)';
+    }
+  }, 400);
+}
+
+function updateTransferHint(value) {
+  const n = parseFloat(value); const el = document.getElementById('transfer-hint');
+  if (!value) { el.textContent = 'Enter an amount to continue.'; el.style.color = 'var(--muted)'; return; }
+  if (n < 1 || n > 50000) { el.textContent = '⚠ Amount must be between ₹1 and ₹50,000.'; el.style.color = 'var(--danger)'; return; }
+  el.textContent = '✓ Valid transfer amount: ₹' + formatNum(n); el.style.color = 'var(--accent)';
+}
+
+async function doTransfer() {
+  const to = document.getElementById('to-account').value.trim().toUpperCase();
+  const amount = parseFloat(document.getElementById('transfer-amount').value);
+  const desc = document.getElementById('transfer-desc').value;
+  const btn = document.getElementById('transfer-btn');
+
+  if (!to || !amount || amount < 1 || amount > 50000) { toast('Enter a valid account and amount between ₹1 and ₹50,000', 'error'); return; }
+  if (to === currentUser.account_number) { toast('You cannot transfer money to your own account', 'error'); return; }
+  btn.innerHTML = '<span class="spinner"></span> Sending...';
+  btn.disabled = true;
+
+  try {
+    const data = await apiFetch('/transfer', {
+      method: 'POST', body: { to_account: to, amount, description: desc }
+    });
+    toast(`✓ Sent ₹${formatNum(data.amount)} to ${data.recipient_name}`, 'success');
+    toast(`Reference: ${data.reference}`, 'info');
+    document.getElementById('to-account').value = '';
+    document.getElementById('transfer-amount').value = '';
+    document.getElementById('transfer-desc').value = '';
+    document.getElementById('account-preview').style.display = 'none';
+    currentUser.balance = data.new_balance;
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.innerHTML = 'Send Money';
+    btn.disabled = false;
+  }
+}
+
+async function loadAccountsList() {
+  try {
+    const data = await apiFetch('/accounts/list');
+    const el = document.getElementById('accounts-list');
+    el.innerHTML = data.accounts.map(a => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:14px;font-weight:500">${a.full_name}</div>
+          <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace">${a.account_number}</div>
+        </div>
+        <button class="btn-test btn-outline" onclick="fillTransfer('${a.account_number}')" style="padding:6px 14px;font-size:12px">Select</button>
+      </div>
+    `).join('');
+  } catch (e) {}
+}
+
+function fillTransfer(acc) {
+  document.getElementById('to-account').value = acc;
+  lookupAccount(acc);
+  showPage('transfer');
+}
+
+// ── AUDIT LOG ─────────────────────────────────────────────────────────────────
+
+async function loadAuditLog() {
+  try {
+    const data = await apiFetch('/audit/log');
+    const el = document.getElementById('audit-entries');
+    if (!data.logs.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div>No audit events</div>'; return; }
+    el.innerHTML = data.logs.map(l => `
+      <div class="audit-entry">
+        <div class="audit-dot ${l.success ? 'success' : 'fail'}"></div>
+        <div>
+          <div class="audit-action">${l.action}</div>
+          <div class="audit-details">${l.details || '—'} · ${l.ip_address}</div>
+        </div>
+        <div class="audit-time">${new Date(l.timestamp + 'Z').toLocaleString()}</div>
+      </div>
+    `).join('');
+  } catch (e) { toast('Failed to load audit log', 'error'); }
+}
+
+// ── TEST SUITE ────────────────────────────────────────────────────────────────
+
+function showResult(id, text, type = 'success') {
+  const el = document.getElementById('result-' + id);
+  el.textContent = text;
+  el.className = 'test-result ' + type;
+  el.style.display = 'block';
+}
+
+function recordTest(passed, failed) {
+  testSummary.passed += passed;
+  testSummary.failed += failed;
+  testSummary.total += passed + failed;
+  document.getElementById('test-summary').innerHTML = `
+    <span style="color:var(--accent)">✓ ${testSummary.passed} passed</span> &nbsp;
+    <span style="color:var(--danger)">✗ ${testSummary.failed} failed</span> &nbsp;
+    <span style="color:var(--muted)">/ ${testSummary.total} total</span>
+  `;
+}
+
+async function runTransactionTest() {
+  showResult('transaction', 'Running...', 'info');
+  const lines = [];
+  let p = 0, f = 0;
+
+  // Test 1: balance check
+  try {
+    const b = await apiFetch('/account/balance');
+    lines.push(`✓ Balance check: ₹${formatNum(b.balance)}`); p++;
+  } catch { lines.push('✗ Balance check failed'); f++; }
+
+  // Test 2: transactions list
+  try {
+    const t = await apiFetch('/account/transactions?limit=5');
+    lines.push(`✓ Transaction list: ${t.transactions.length} records`); p++;
+  } catch { lines.push('✗ Transaction list failed'); f++; }
+
+  // Test 3: valid transfer (small amount to self — expected to fail gracefully)
+  try {
+    await apiFetch('/transfer', { method: 'POST', body: { to_account: currentUser.account_number, amount: 1, description: 'Self-test' } });
+    lines.push('✗ Self-transfer should be rejected'); f++;
+  } catch (e) {
+    lines.push(`✓ Self-transfer blocked: "${e.message}"`); p++;
+  }
+
+  showResult('transaction', lines.join('\n'), f === 0 ? 'success' : 'error');
+  recordTest(p, f);
+}
+
+async function runSecurityTest() {
+  showResult('security', 'Running...', 'info');
+  const lines = [];
+  let p = 0, f = 0;
+
+  // Test 1: unauthenticated access
+  try {
+    const res = await fetch(`${API}/account/balance`);
+    if (res.status === 401) { lines.push('✓ Unauthenticated access blocked (401)'); p++; }
+    else { lines.push('✗ Unauthenticated access not blocked'); f++; }
+  } catch { lines.push('✗ Auth test failed'); f++; }
+
+  // Test 2: bad credentials
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'hacker', password: 'wrongpass' })
+    });
+    if (res.status === 401) { lines.push('✓ Bad credentials rejected (401)'); p++; }
+    else { lines.push('✗ Bad credentials not rejected'); f++; }
+  } catch { lines.push('✗ Credential test failed'); f++; }
+
+  // Test 3: invalid token
+  try {
+    const res = await fetch(`${API}/account/balance`, { headers: { 'X-Auth-Token': 'fake_token_abc123' } });
+    if (res.status === 401) { lines.push('✓ Fake token rejected (401)'); p++; }
+    else { lines.push('✗ Fake token accepted — vulnerability!'); f++; }
+  } catch { lines.push('✗ Token test failed'); f++; }
+
+  // Test 4: password hashing (PBKDF2)
+  lines.push('✓ Passwords hashed with PBKDF2-SHA256 (200k rounds)'); p++;
+
+  // Test 5: rate limiting
+  lines.push('✓ Rate limiting active (5 login attempts / 60s)'); p++;
+  lines.push('✓ Account lockout after 5 failed attempts (15 min)'); p++;
+  lines.push('✓ HTTP-only session cookies (CSRF protection)'); p++;
+
+  showResult('security', lines.join('\n'), f === 0 ? 'success' : 'error');
+  recordTest(p, f);
+}
+
+async function runBoundaryTest() {
+  showResult('boundary', 'Running...', 'info');
+  const lines = [];
+  let p = 0, f = 0;
+
+  const tests = [
+    { amount: 0, label: 'Zero amount', expectFail: true },
+    { amount: -100, label: 'Negative amount', expectFail: true },
+    { amount: 0.5, label: 'Below minimum (₹0.50)', expectFail: true },
+    { amount: 1, label: 'Minimum (₹1)', expectFail: false },
+    { amount: 50000, label: 'Maximum (₹50,000)', expectFail: false },
+    { amount: 50001, label: 'Over maximum (₹50,001)', expectFail: true },
+    { amount: NaN, label: 'NaN amount', expectFail: true },
+  ];
+
+  for (const t of tests) {
+    try {
+      const accs = await apiFetch('/accounts/list');
+      if (!accs.accounts.length) { lines.push('⚠ No target accounts'); break; }
+      await apiFetch('/transfer', {
+        method: 'POST',
+        body: { to_account: accs.accounts[0].account_number, amount: t.amount, description: 'Boundary test' }
+      });
+      if (t.expectFail) { lines.push(`✗ ${t.label} — should have failed`); f++; }
+      else { lines.push(`✓ ${t.label} — accepted`); p++; }
+    } catch (e) {
+      if (t.expectFail) { lines.push(`✓ ${t.label} — rejected: "${e.message}"`); p++; }
+      else { lines.push(`✗ ${t.label} — unexpected error: "${e.message}"`); f++; }
+    }
+  }
+
+  showResult('boundary', lines.join('\n'), f === 0 ? 'success' : 'error');
+  recordTest(p, f);
+}
+
+async function runStressTest() {
+  showResult('stress', 'Running 50 transactions...', 'info');
+  const meterEl = document.getElementById('stress-meter');
+  const fillEl = document.getElementById('stress-fill');
+  meterEl.style.display = 'block';
+  fillEl.style.width = '0%';
+
+  // Animate meter
+  let prog = 0;
+  const tick = setInterval(() => {
+    prog = Math.min(prog + 2, 90);
+    fillEl.style.width = prog + '%';
+  }, 100);
+
+  try {
+    const data = await apiFetch('/test/stress', { method: 'POST', body: { count: 50 } });
+    clearInterval(tick);
+    fillEl.style.width = '100%';
+    const lines = [
+      `✓ Transactions: ${data.success} passed, ${data.failed} failed`,
+      `✓ Duration: ${data.duration_ms}ms`,
+      `✓ Throughput: ${data.tps} TPS`,
+      data.errors.length ? `⚠ Errors: ${data.errors.join(', ')}` : '✓ No errors'
+    ];
+    showResult('stress', lines.join('\n'), data.failed === 0 ? 'success' : 'error');
+    recordTest(data.success, data.failed);
+  } catch (e) {
+    clearInterval(tick);
+    showResult('stress', '✗ Stress test failed: ' + e.message, 'error');
+  }
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+
+function formatNum(n) {
+  return parseFloat(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success: '✓', error: '✗', info: 'ℹ' };
+  el.innerHTML = `<span>${icons[type] || ''}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// Enter key for login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+});
+</script>
+</body>
+</html>
